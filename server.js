@@ -2,34 +2,78 @@ const Telegraf = require('telegraf');
 const dotenv = require('dotenv');
 dotenv.config();
 const bot = new Telegraf(process.env.BOT_TOKEN);
-const gameList = [];
+let gameList = [];
 bot.command('start', (ctx) => {
-    ctx.reply('One');
-    ctx.reply('two');
-}, bot.launch());
+    for (let game of gameList) {
+        if (game.host == ctx.from.id) {
+            ctx.reply('Sie haben bereits ein Spiel gestartet, beenden Sie es vorher mit \'/stop\'');
+            return;
+        }
+    }
+    let game = new Game(ctx.from.id);
+    gameList.push(game);
+    ctx.reply('Dein Spiel wurde gestartet mit der ID: ' + game.id + '\nUm das Spiel zu starten tippe \'/begin\',\nUm dem Spiel beizutreten schreibe im Gruppen chat oder Privat \'/join' + game.id + '\'');
+});
+bot.command('join', (ctx) => {
+    let args = ctx.message.text.split(' ');
+    for (let game of gameList) {
+        if (game.id == args[1]
+            && game.ongoing == false) {
+            for (let player of game.playerList) {
+                if (player == ctx.from.id) {
+                    return;
+                }
+            }
+            game.playerList.push(ctx.from.id);
+            bot.telegram.sendMessage(ctx.from.id, "Du bist Spiel " + game.id + " beigetreten.");
+            break;
+        }
+        else {
+            ctx.reply('Spiel wurde nicht gefunden, sicher, dass die richtige Nummer angegeben wurde?');
+        }
+    }
+});
+bot.command('begin', (ctx) => {
+    for (let game of gameList) {
+        if (game.host == ctx.from.id) {
+            game.broadcast("Spiel " + game.id + " hat begonnen.\nBitte schreiben Sie mir alle ihre zwei Worte");
+            game.ongoing = true;
+            return;
+        }
+    }
+});
+bot.on('text', (ctx) => {
+    for (let game of gameList) {
+        if (game.ongoing) {
+            for (let player of game.playerList) {
+                if (player == ctx.from.id) {
+                    game.wordList.push(ctx.message);
+                }
+            }
+        }
+    }
+});
+bot.command('stop', (ctx) => {
+    for (let game of gameList) {
+        if (game.host == ctx.from.id) {
+            game.broadcast("Spiel " + game.id + " wurde beendet.");
+            gameList = gameList.filter((game) => game.host !== ctx.from.id);
+            return;
+        }
+    }
+});
+bot.launch();
 class Game {
     constructor(host) {
         this.ongoing = false;
+        this.playerList = [];
+        this.wordList = [];
         this.id = gameList.length + 1;
         this.host = host;
     }
-    addWord(words) {
-        for (let word of words) {
-            this.wordList.push(word);
+    broadcast(message) {
+        for (let player of this.playerList) {
+            bot.telegram.sendMessage(player, message);
         }
-    }
-    addPlayer(player) {
-        this.playerList.push(player);
-    }
-}
-class Player {
-    constructor() {
-        this.ready = false;
-    }
-    player(id) {
-        this.pID = id;
-    }
-    setReady() {
-        this.ready = true;
     }
 }
