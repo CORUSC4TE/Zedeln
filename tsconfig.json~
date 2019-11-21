@@ -1,0 +1,12 @@
+{
+    "compileOnSave": true,
+    "compilerOptions": {
+	"target": "ES6",
+	"module": "commonjs",
+	"removeComments": true,
+    },
+
+    "files": [
+	"server.ts"
+    ]
+}

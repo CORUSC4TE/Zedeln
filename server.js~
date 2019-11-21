@@ -1,0 +1,54 @@
+/*
+ * Setting Up Environment
+ */
+var Telegraf = require('telegraf');
+var dotenv = require('dotenv');
+dotenv.config();
+var bot = new Telegraf(process.env.BOT_TOKEN);
+//const crypto = require("crypto");
+var gameList;
+/*
+ * Declaring Routes
+ */
+bot.command('start', function (ctx) {
+    //    gameList.push(new Game());
+    ctx.reply(ctx.telegram);
+}, bot.launch());
+var Game = /** @class */ (function () {
+    function Game() {
+    }
+    return Game;
+}());
+var id;
+var host;
+var ongoing = false;
+var playerList;
+var wordList;
+game(host);
+{
+    id = gameList.length;
+}
+function addWord(words) {
+    for (var _i = 0, words_1 = words; _i < words_1.length; _i++) {
+        var word = words_1[_i];
+        this.wordList.push(word);
+    }
+}
+function addPlayer(player) {
+    this.playerList.push(player);
+}
+var Player = /** @class */ (function () {
+    function Player() {
+    }
+    return Player;
+}());
+var id;
+var ready = false;
+player(id);
+{
+    this.id = id;
+}
+setReady();
+{
+    this.ready = true;
+}
