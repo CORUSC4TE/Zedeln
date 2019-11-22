@@ -1,11 +1,13 @@
-FROM node:10
+FROM node
 
-WORKDIR /home/noah/Developement/Telegrambot/Zedeln
+WORKDIR /usr/src/app
 
 COPY package*.json ./
 
 RUN npm install
 
-COPY . .
+COPY . ./
+
+EXPOSE 8080
 
 CMD [ "node", "server.js" ]
