@@ -22,7 +22,8 @@ bot.command('help', (ctx) => {
 bot.command('join', (ctx) => {
     let args = ctx.message.text.split(' ');
     for (let game of gameList) {
-        if (game.id == args[1]) {
+        if (game.id == args[1]
+            && game.ongoing == false) {
             for (let player of game.playerList) {
                 if (player.id == ctx.from.id) {
                     ctx.reply('Sie sind bereits Teil des Spiels.');
@@ -89,7 +90,15 @@ bot.on('message', (ctx) => {
         }
     }
 });
-
+bot.command('save', (ctx) => {
+    let savestate;
+    for (let game of gameList) {
+        for (let word of game.wordList) {
+            savestate += word;
+        }
+    }
+    ctx.reply(savestate);
+});
 bot.launch();
 class Game {
     constructor(host) {
@@ -125,7 +134,6 @@ class Game {
         if (this.round % 5 > 0) {
             this.pickWord();
         }
-        console.log(this.wordList)
     }
     pickWord() {
         let pickableWords = this.wordList;
