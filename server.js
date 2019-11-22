@@ -22,8 +22,7 @@ bot.command('help', (ctx) => {
 bot.command('join', (ctx) => {
     let args = ctx.message.text.split(' ');
     for (let game of gameList) {
-        if (game.id == args[1]
-            && game.ongoing == false) {
+        if (game.id == args[1]) {
             for (let player of game.playerList) {
                 if (player.id == ctx.from.id) {
                     ctx.reply('Sie sind bereits Teil des Spiels.');
@@ -99,6 +98,14 @@ bot.command('save', (ctx) => {
     }
     ctx.reply(savestate);
 });
+bot.command('leave', (ctx) => {
+    for (let game of gameList) {
+        for (let player of game.playerList) {
+            if (player.id == ctx.from.id) {
+            }
+        }
+    }
+});
 bot.launch();
 class Game {
     constructor(host) {
@@ -140,6 +147,7 @@ class Game {
         for (let player of this.playerList) {
             let pick = pickableWords[Math.floor(Math.random() * pickableWords.length)];
             bot.telegram.sendMessage(player.id, pick);
+            console.log(player.user.first_name + ": " + pick);
             pickableWords = pickableWords.filter((word) => word != pick);
         }
     }
@@ -149,6 +157,7 @@ class Game {
         }
     }
     gatherWords() {
+        console.log(this.wordList);
         this.gathering = true;
         this.broadcast("Bitte schreib mir 2 Worte deiner Wahl.");
     }
@@ -156,6 +165,8 @@ class Game {
         console.log("Started game with " + this.playerList.length + " Players");
         this.ongoing = true;
         this.gatherWords();
+    }
+    removePlayer(player) {
     }
 }
 class Player {
