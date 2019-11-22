@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 const Telegraf = require('telegraf');
 const dotenv = require('dotenv');
 dotenv.config();
@@ -90,6 +89,15 @@ bot.on('message', (ctx) => {
             }
         }
     }
+});
+bot.command('save', (ctx) => {
+    let savestate;
+    for (let game of gameList) {
+        for (let word of game.wordList) {
+            savestate += word;
+        }
+    }
+    ctx.reply(savestate);
 });
 bot.launch();
 class Game {
