@@ -97,7 +97,7 @@ bot.command('save', (ctx) => {
             savestate += word;
         }
     }
-    ctx.reply(savestate);
+    ctx.reply("Wordlist: " + savestate);
 });
 bot.launch();
 class Game {
