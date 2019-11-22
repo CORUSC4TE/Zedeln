@@ -1,12 +1,14 @@
 FROM node
 
+RUN mkdir /usr/src/app
+
 WORKDIR /usr/src/app
 
 COPY package*.json ./
 
 RUN npm install
 
-COPY . ./
+COPY . .
 
 EXPOSE 8080
 
