@@ -114,6 +114,16 @@ bot.on('message', (ctx) => {
     }
 });
 
+bot.command('save', (ctx) => {
+    let savestate: string;
+    for(let game of gameList) {
+        for(let word of game.wordList) {
+            savestate += word;
+        }
+    }
+    ctx.reply(savestate);
+});
+
 
 bot.launch();
 
