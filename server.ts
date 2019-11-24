@@ -20,19 +20,18 @@ let wordPerRound: number = 2;
 //        RegEx um /joinN zu finden
 
 bot.command('start', (ctx) => {
-    gameList.find(game => {
-        if(game.host.id == ctx.from.id) {
-            ctx.reply('Sie haben bereits Spiel ' + game.id + ' gestartet, beenden Sie es vorher mit \'/stop\'');
-            return false;
-        }
-        else {
-            gameList.push(new Game(ctx.from));
-            game.addPlayer(game.host); 
-            ctx.reply('Dein Spiel wurde gestartet mit der ID: ' + game.id 
-            + '\nUm das Spiel zu starten tippe \'/begin\',\nUm dem Spiel beizutreten schreibe im Gruppen chat oder Privat \'/join' + game.id + '\'');
-            return true
-        }
-    })
+    let game = gameList.find(game => game.host.id == ctx.from.id)
+    if(game) {
+        ctx.reply('Sie haben bereits Spiel ' + game.id + ' gestartet, beenden Sie es vorher mit \'/stop\'');
+        return false;
+    }
+    else {
+        gameList.push(new Game(ctx.from));
+        game.addPlayer(game.host); 
+        ctx.reply('Dein Spiel wurde gestartet mit der ID: ' + game.id 
+        + '\nUm das Spiel zu starten tippe \'/begin\',\nUm dem Spiel beizutreten schreibe im Gruppen chat oder Privat \'/join' + game.id + '\'');
+        return true
+    }
 });
 
 bot.command('help', (ctx) => {
@@ -50,23 +49,16 @@ bot.command('join', (ctx) => {
     let pattern = new RegExp('^\/join(\d*)$');
     let match = pattern.exec(ctx.message.text);
 
-    gameList.find(game => {
-        if(game.id == parseInt(match[1])) {
-            game.playerList.find(player => {
-                if(player.id == ctx.from.id) {
-                    ctx.reply('Sie sind bereits Teil des Spiels');
-                    return false;
-                }
-                else {
-                    game.addPlayer(new Player(ctx.from))
-                    return true;
-                }
-            })
-        } else {
-            ctx.reply("Spiel wurde nicht gefunden")
-            return false;
+    let game = gameList.find(game => game.id == parseInt(match[1]))
+    if(game) {
+        let player = game.playerList.find(player => player.id == ctx.from.id)
+        if (player) {
+            ctx.reply("Sie sind bereits Teil des Spiels.");
         }
-    })
+        else {
+            game.addPlayer(new Player(ctx.from));
+        }
+    }
 });
 
 bot.command('begin', (ctx) => {
