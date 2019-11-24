@@ -23,18 +23,20 @@ bot.command('start', (ctx) => {
     gameList.find(game => {
         if(game.host.id == ctx.from.id) {
             ctx.reply('Sie haben bereits Spiel ' + game.id + ' gestartet, beenden Sie es vorher mit \'/stop\'');
+            return false;
         }
         else {
             gameList.push(new Game(ctx.from));
             game.addPlayer(game.host); 
             ctx.reply('Dein Spiel wurde gestartet mit der ID: ' + game.id 
-            + '\nUm das Spiel zu starten tippe \'/begin\',\nUm dem Spiel beizutreten schreibe im Gruppen chat oder Privat \'/join ' + game.id + '\'');
+            + '\nUm das Spiel zu starten tippe \'/begin\',\nUm dem Spiel beizutreten schreibe im Gruppen chat oder Privat \'/join' + game.id + '\'');
+            return true
         }
     })
 });
 
 bot.command('help', (ctx) => {
-    ctx.reply('Um ein Spiel zu starten \'/start\' eingeben,\nUm dem Spiel als Spieler beizutreten benutzt man \'/join {SpielID}\'\nNachdem jeder beigetreten ist und eine Nachricht vom Bot bekommen hat kann man das Spiel mit \'/start\' Starten, dann sammelt der Bot die Worte\nWenn die richtige Anzahl an Worten gesammelt wurde kann man mit \'/begin\' starten.\nNach jeder Runde muss man mit \'/begin\' das Spiel starten, jede Runde wird mit \'next\' beendet. Diese Befehle kann nur der Host, also die Person die das Spiel gestartet hat benutzen, falls das nicht gut geht, kann man das noch aendern. Falls Einstellungen gewuenscht werden, kann das auch noch getan werden, wie Viele Worte pro Runde, wie viele Spielrunden, scoring etc.');
+    ctx.reply('Um ein Spiel zu starten \'/start\' eingeben,\nUm dem Spiel als Spieler beizutreten benutzt man \'/join{SpielID}\'\nNachdem jeder beigetreten ist und eine Nachricht vom Bot bekommen hat kann man das Spiel mit \'/start\' Starten, dann sammelt der Bot die Worte\nWenn die richtige Anzahl an Worten gesammelt wurde kann man mit \'/begin\' starten.\nNach jeder Runde muss man mit \'/begin\' das Spiel starten, jede Runde wird mit \'next\' beendet. Diese Befehle kann nur der Host, also die Person die das Spiel gestartet hat benutzen, falls das nicht gut geht, kann man das noch aendern. Falls Einstellungen gewuenscht werden, kann das auch noch getan werden, wie Viele Worte pro Runde, wie viele Spielrunden, scoring etc.');
 });
 
 bot.command('show', (ctx) => {
@@ -53,13 +55,16 @@ bot.command('join', (ctx) => {
             game.playerList.find(player => {
                 if(player.id == ctx.from.id) {
                     ctx.reply('Sie sind bereits Teil des Spiels');
+                    return false;
                 }
                 else {
                     game.addPlayer(new Player(ctx.from))
+                    return true;
                 }
             })
         } else {
             ctx.reply("Spiel wurde nicht gefunden")
+            return false;
         }
     })
 });
@@ -83,9 +88,12 @@ bot.command('stop', (ctx) => {
 
 bot.on('message', (ctx) => {
     gameList.find(game => {
-        if(game.addWord(ctx.from.id, ctx.message.text) == false) {
+        if(!game.addWord(ctx.from.id, ctx.message.text)) {  
             ctx.reply('Das Spiel braucht keine weiteren Worte mehr.')
-        }      
+            return false;
+        } else {
+            return true;
+        }
     })
 });
 
@@ -96,17 +104,13 @@ bot.command('save', (ctx) => {
 });
 
 bot.command('leave', (ctx) => {
-    gameList.find(game => game.playerList.find(player => {
-        player.id == ctx.from.id; 
-        game.removePlayer(player);
-    }))
+    gameList.find(game => {
+        return game.playerList.some(player => player.id == ctx.from.id)
+    }).removePlayer(ctx.from)
 });
 
 bot.launch();
 
-function findGame(game: Game) {
-   // for()
-}
 
 class Game {
     id: number;
@@ -195,9 +199,12 @@ class Game {
         return;
     }
 
-    removePlayer(player) {
-        console.log('Player: ' + player.first_name + ' has left the game.')
-        this.playerList = this.playerList.filter((user) => user != player)
+    removePlayer(rmPlayer):boolean {
+        if(this.playerList.find(player => player == rmPlayer)) {
+            console.log('Player: ' + rmPlayer.first_name + ' has left the game.')
+            this.playerList = this.playerList.filter((user) => user != rmPlayer)
+            return true;
+        } else { return false }
     }
 
     addPlayer(player) {

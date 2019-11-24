@@ -2,7 +2,8 @@
   "name": "telegram-bot",
   "version": "1.0.0",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "build": "tsc"
   },
   "description": "A Bot for Telegram to play Games",
   "main": "server.js",
@@ -10,7 +11,9 @@
     "dotenv": "^8.2.0",
     "telegraf": "^3.33.3"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "typescript": "^3.5.3"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/CORUSC4TE/Zedeln.git"

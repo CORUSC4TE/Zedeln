@@ -8,12 +8,10 @@ COPY package*.json ./
 
 USER node
 
-RUN npm install && npm install -g typescript tsc
+RUN npm install
 
 COPY --chown=node:node . .
 
 EXPOSE 8080
-
-RUN tsc
 
 CMD [ "node", "server.js" ]
