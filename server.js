@@ -52,16 +52,22 @@ bot.command('join', (ctx) => {
     });
 });
 bot.command('begin', (ctx) => {
-    gameList.find(game => game.host.id == ctx.from.id).startGame();
+    let game = gameList.find(game => game.host.id == ctx.from.id);
+    if (game)
+        game.startGame();
 });
 bot.command('die', (ctx) => {
     ctx.reply('Die you capitalist spazz');
 });
 bot.command('next', (ctx) => {
-    gameList.find(game => game.host.id == ctx.from.id).nextRound();
+    let game = gameList.find(game => game.host.id == ctx.from.id);
+    if (game)
+        game.nextRound();
 });
 bot.command('stop', (ctx) => {
-    gameList.find(game => game.host.id == ctx.from.id).stopGame();
+    let game = gameList.find(game => game.host.id == ctx.from.id);
+    if (game)
+        game.stopGame();
     ctx.reply("Spiel beendet. Ich hoffe ihr hattet Spass");
 });
 bot.on('message', (ctx) => {
@@ -81,9 +87,11 @@ bot.command('save', (ctx) => {
     }
 });
 bot.command('leave', (ctx) => {
-    gameList.find(game => {
+    let game = gameList.find(game => {
         return game.playerList.some(player => player.id == ctx.from.id);
-    }).removePlayer(ctx.from);
+    });
+    if (game)
+        game.removePlayer(ctx.from);
 });
 bot.launch();
 class Game {
