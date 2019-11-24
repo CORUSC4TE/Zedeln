@@ -8,7 +8,7 @@ COPY package*.json ./
 
 USER node
 
-RUN npm install && npm install typescript
+RUN npm install && npm install -g typescript tsc
 
 COPY --chown=node:node . .
 
