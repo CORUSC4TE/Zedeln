@@ -26,10 +26,10 @@ bot.command('start', (ctx) => {
         return false;
     }
     else {
-        gameList.push(new Game(ctx.from));
-        game.addPlayer(game.host); 
+        game = new Game(ctx.from)
+        gameList.push(game);
         ctx.reply('Dein Spiel wurde gestartet mit der ID: ' + game.id 
-        + '\nUm das Spiel zu starten tippe \'/begin\',\nUm dem Spiel beizutreten schreibe im Gruppen chat oder Privat \'/join' + game.id + '\'');
+        + '\nUm das Spiel zu starten tippe \'/begin\',\nUm dem Spiel beizutreten schreibe mir \'/join' + game.id + '\'');
         return true
     }
 });
@@ -45,11 +45,8 @@ bot.command('show', (ctx) => {
 })
 
 //Join a game	    
-bot.command('join', (ctx) => {
-    let pattern = new RegExp('^\/join(\d*)$');
-    let match = pattern.exec(ctx.message.text);
-
-    let game = gameList.find(game => game.id == parseInt(match[1]))
+bot.hears(/^\/join(\d*)$/gi, (ctx) => {
+    let game = gameList.find(game => game.id == parseInt(ctx.match[1]))
     if(game) {
         let player = game.playerList.find(player => player.id == ctx.from.id)
         if (player) {
@@ -59,11 +56,12 @@ bot.command('join', (ctx) => {
             game.addPlayer(new Player(ctx.from));
         }
     }
-});
+})
+
 
 bot.command('begin', (ctx) => {
     let game = gameList.find(game => game.host.id == ctx.from.id)
-    if(game) game.startGame();
+    if(game) { game.startGame(); }
 });
 
 bot.command('die', (ctx) => {
@@ -82,18 +80,19 @@ bot.command('stop', (ctx) => {
 });
 
 bot.on('message', (ctx) => {
-    gameList.find(game => {
-        if(!game.addWord(ctx.from.id, ctx.message.text)) {  
-            ctx.reply('Das Spiel braucht keine weiteren Worte mehr.')
-            return false;
-        } else {
-            return true;
-        }
+    let game = gameList.find(game => {
+        return game.playerList.some(player => player.id == ctx.from.id)
     })
+    if(game) {
+        if(!game.addWord(ctx.from.id, ctx.message.text)) {
+            ctx.reply('Das Spiel braucht keine weiteren Worte mehr')
+        }
+    }  
 });
 
 bot.command('save', (ctx) => {
-    for(let game of gameList) {
+    let game = gameList.find(game => game.host.id == ctx.from.id)
+    if(game) {
         ctx.reply(game.wordList);
     }
 });
@@ -110,17 +109,24 @@ bot.launch();
 
 class Game {
     id: number;
-    host;
+    host: Player;
     ongoing: boolean = false;
     gathering: boolean = false;
     playerList: Player[] = [];
     wordList: string[] = [];
     round: number = 0;
 
+    constructor(host) {
+        this.id = gameList.length + 1;
+        this.host = new Player(host);
+        this.addPlayer(this.host);
+        console.log("Game " + this.id + " created.")
+    }
+
     nextRound() {
-	console.log("In nextRound: " + this.round);
-	this.gathering = false;
-	this.round++;
+	    console.log("In nextRound: " + this.round);
+	    this.gathering = false;
+	    this.round++;
         switch (this.round % 5) {
             case 0: this.gatherWords(); break;
             case 1: this.broadcast("Das Wort muss erklaert werden."); break;
@@ -134,25 +140,24 @@ class Game {
     }
     
     addWord(id, word:string) :Boolean {
-        this.playerList.find(player => {
-            if(player.id == id) {
-                if (player.wordList.length < (Math.floor(this.round / 4)+1) * wordPerRound) {
-                    player.wordList.push(word);
-                    this.wordList.push(word);
-                }
-                else {
-                    return false;
-                }
-                if (this.wordList.length ==
-                    (this.playerList.length * wordPerRound * (Math.floor(this.round / 4)+1)) ) {
-                    console.log("Gathered " + this.wordList.length + " Words starting next round: " + (this.round));
-                    if (this.round % 5 == 0 && this.wordList.length != 0) {
-                        this.nextRound();
-                    }
+        let player = this.playerList.find(player => player.id == id);
+        if(player) {
+            if (player.wordList.length < (Math.floor(this.round / 4)+1) * wordPerRound) {
+                player.wordList.push(word);
+                this.wordList.push(word);
+            }
+            else {
+                return false;
+            }
+            if (this.wordList.length ==
+                (this.playerList.length * wordPerRound * (Math.floor(this.round / 4)+1)) ) {
+                console.log("Gathered " + this.wordList.length + " Words starting next round: " + (this.round));
+                if (this.round % 5 == 0 && this.wordList.length != 0) {
+                    this.nextRound();
                 }
             }
-        })
-        return true;
+            return true;
+        }
     }
 
     pickWord() {
@@ -165,10 +170,6 @@ class Game {
         }
     }
 
-    constructor(host) {
-        this.id = gameList.length + 1;
-        this.host = host;
-    }
 
     broadcast(message: string) {
         for (let player of this.playerList) {
@@ -183,7 +184,7 @@ class Game {
     }
     
     startGame() {
-	    console.log("Started game with " + this.playerList.length + " Players");
+	    console.log("Started game " + this.id + " with " + this.playerList.length + " Players");
 	    this.ongoing = true;
 	    this.gatherWords();
     }
@@ -204,8 +205,8 @@ class Game {
     }
 
     addPlayer(player) {
-        console.log('PLayer: ' + player.first_name + ' has joined the game.');
-        this.playerList = this.playerList.filter((user) => user != player);
+        console.log('Player: ' + player.first_name + ' has joined the game.');
+        this.playerList.push(player);
     }
 
 }
@@ -213,7 +214,7 @@ class Game {
 class Player {
     id: string;
     user;
-    wordList: string[] = [];
+    wordList: string[] = new Array();
 
     constructor(user) {
         this.id = user.id;
