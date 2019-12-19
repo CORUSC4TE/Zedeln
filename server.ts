@@ -1,12 +1,10 @@
-import { createContext } from "vm";
-
 /* 
  * Setting Up Environment
  */
 const Telegraf = require('telegraf');
 const dotenv = require('dotenv'); dotenv.config();
 const bot = new Telegraf(process.env.BOT_TOKEN);
-//const crypto = require("crypto");
+
 
 let gameList: Game[] = [];
 let wordPerRound: number = 2;
@@ -47,13 +45,13 @@ bot.command('show', (ctx) => {
 //Join a game	    
 bot.hears(/^\/join(\d*)$/gi, (ctx) => {
     let game = gameList.find(game => game.id == parseInt(ctx.match[1]))
-    if(game) {
+    if(game instanceof Zedeln) {
         let player = game.playerList.find(player => player.id == ctx.from.id)
         if (player) {
             ctx.reply("Sie sind bereits Teil des Spiels.");
         }
         else {
-            game.addPlayer(new Player(ctx.from));
+            game.addPlayer(new ZedelPlayer(ctx.from));
         }
     }
 })
@@ -61,7 +59,7 @@ bot.hears(/^\/join(\d*)$/gi, (ctx) => {
 
 bot.command('begin', (ctx) => {
     let game = gameList.find(game => game.host.id == ctx.from.id)
-    if(game) { game.startGame(); }
+    if(game instanceof Zedeln) { game.startGame(); }
 });
 
 bot.command('die', (ctx) => {
@@ -70,12 +68,12 @@ bot.command('die', (ctx) => {
 
 bot.command('next', (ctx) => {
     let game = gameList.find(game => game.host.id == ctx.from.id)
-    if (game) game.nextRound();
+    if (game instanceof Zedeln) game.nextRound();
 });
 
 bot.command('stop', (ctx) => {
     let game = gameList.find(game => game.host.id == ctx.from.id)
-    if (game) game.stopGame();
+    if (game instanceof Zedeln) game.stopGame();
     ctx.reply("Spiel beendet. Ich hoffe ihr hattet Spass");
 });
 
@@ -83,7 +81,7 @@ bot.on('message', (ctx) => {
     let game = gameList.find(game => {
         return game.playerList.some(player => player.id == ctx.from.id)
     })
-    if(game) {
+    if(game instanceof Zedeln) {
         if(!game.addWord(ctx.from.id, ctx.message.text)) {
             ctx.reply('Das Spiel braucht keine weiteren Worte mehr')
         }
@@ -92,7 +90,7 @@ bot.on('message', (ctx) => {
 
 bot.command('save', (ctx) => {
     let game = gameList.find(game => game.host.id == ctx.from.id)
-    if(game) {
+    if(game instanceof Zedeln) {
         ctx.reply(game.wordList);
     }
 });
@@ -106,20 +104,85 @@ bot.command('leave', (ctx) => {
 
 bot.launch();
 
-
 class Game {
-    id: number;
-    host: Player;
+    host: ZedelPlayer;       // Game Master => The Player that regulates the Game 
+    public id: number = 0;  // Number of Instances
+    public playerList: ZedelPlayer[]; // All joined Players
+
+    constructor(host) { 
+        this.id++;
+        this.host = host
+        this.addPlayer(host)
+    }
+    /**
+     * 
+     * @param Player The Player that should be removed from the Game
+     */
+    removePlayer(rmPlayer):boolean {
+        if(this.playerList.find(player => player == rmPlayer)) {
+            console.log('Player: ' + rmPlayer.first_name + ' has left the game ' + typeof(this) + ": " + this.id)
+            this.playerList = this.playerList.filter((user) => user != rmPlayer)
+            return true;
+        } else { return false }
+    }
+
+    addPlayer(player) {
+        console.log('Player: ' + player.first_name + ' has joined the game' + typeof(this) + ": " + this.id);
+        this.playerList.push(player);
+    }
+
+
+    /**
+     * 
+     * @param message Message that should be send to each Player of the Game
+     */
+    broadcast(message: string) {
+        for (let player of this.playerList) {
+            bot.telegram.sendMessage(player.id, message);
+        }
+    }
+}
+
+interface roundBased {
+    round: number;
+
+    nextRound();
+
+    startGame();
+
+    stopGame();
+}
+
+class Guessperson extends Game {
+    personList: string[] = [];
+
+    constructor(host) {
+        super(host)
+    }
+    
+    /**
+     * Each Player must provide a String
+     * String is being linked to a person at random (not the same person though)
+     * Broadcasting all links omitting self
+     */
+    startGame() {
+
+    }
+
+    selectPairing() {
+
+    }
+}
+
+class Zedeln extends Game implements roundBased {
     ongoing: boolean = false;
     gathering: boolean = false;
-    playerList: Player[] = [];
+    playerList: ZedelPlayer[] = [];
     wordList: string[] = [];
     round: number = 0;
 
     constructor(host) {
-        this.id = gameList.length + 1;
-        this.host = new Player(host);
-        this.addPlayer(this.host);
+        super(host)
         console.log("Game " + this.id + " created.")
     }
 
@@ -165,15 +228,8 @@ class Game {
         for (let player of this.playerList) {
             let pick: string = pickableWords[Math.floor(Math.random() * pickableWords.length)];
             bot.telegram.sendMessage(player.id, pick);
-            console.log(player.user.first_name + ": " + pick)
+            console.log(this.id + ": " + player.user.first_name + ": " + pick)
             pickableWords = pickableWords.filter((word) => word != pick);
-        }
-    }
-
-
-    broadcast(message: string) {
-        for (let player of this.playerList) {
-            bot.telegram.sendMessage(player.id, message);
         }
     }
 
@@ -195,29 +251,31 @@ class Game {
         gameList = gameList.filter((game) => game != this);
         return;
     }
-
-    removePlayer(rmPlayer):boolean {
-        if(this.playerList.find(player => player == rmPlayer)) {
-            console.log('Player: ' + rmPlayer.first_name + ' has left the game.')
-            this.playerList = this.playerList.filter((user) => user != rmPlayer)
-            return true;
-        } else { return false }
-    }
-
-    addPlayer(player) {
-        console.log('Player: ' + player.first_name + ' has joined the game.');
-        this.playerList.push(player);
-    }
-
 }
 
 class Player {
-    id: string;
+    id: String;
     user;
-    wordList: string[] = new Array();
 
     constructor(user) {
         this.id = user.id;
         this.user = user;
+    }
+}
+
+class GuessPlayer extends Player {
+    person: string;
+    input: string;
+
+    constructor(user) {
+        super(user)
+    }
+}
+
+class ZedelPlayer extends Player {
+    wordList: string[] = new Array();
+
+    constructor(user) {
+        super(user)
     }
 }
