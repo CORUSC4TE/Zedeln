@@ -16,6 +16,8 @@ let wordPerRound: number = 2;
 
 // TODO : Random Word Pick
 //        RegEx um /joinN zu finden
+//          Implement Middleware that splits Zedeln and Personenraten
+//          Implement Personenraten
 
 bot.command('start', (ctx) => {
     let game = gameList.find(game => game.host.id == ctx.from.id)
