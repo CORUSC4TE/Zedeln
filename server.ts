@@ -2,9 +2,49 @@
  * Setting Up Environment
  */
 const Telegraf = require('telegraf');
+const TelegrafInlineMenu = require('telegraf-inline-menu')
 const dotenv = require('dotenv'); dotenv.config();
 const bot = new Telegraf(process.env.BOT_TOKEN);
 
+// Inline Menu
+const menu = new TelegrafInlineMenu('Wanna play a game?');
+
+let gameMenuToggle = false;
+
+/* menu.toggle('Start Game', 'a', {
+    setFunc: (_ctx, newVal) => {
+        gameMenuToggle = newVal
+    },
+    isSetFunc: () => gameMenuToggle
+})
+
+menu.simpleButton('Zedeln', 'z', {
+    doFunc: async ctx => ctx.answerCbQuery('You started a game of Zedeln'),
+    hide: () => gameMenuToggle
+}) 
+
+menu.simpleButton('Personenraten', 'p', {
+    doFunc: async ctx => ctx.answerCbQuery('You started a game of "Personenraten".'),
+    hide: () => gameMenuToggle
+}) */
+
+ let selectedKey = 'b';
+menu.select('s', ['Zedeln', 'Personenraten'], {
+    setFunc: async (ctx, key) => {
+        selectedKey = key
+        await ctx.answerCbQuery(`you selected ${key}`)
+    },
+    isSetFunc: (_ctx, key) => key === selectedKey
+}) 
+
+menu.setCommand('start')
+
+bot.use(menu.init())
+
+let nextGDate: {
+    date: Date;
+    message: string;
+}
 
 let gameList: Game[] = [];
 let wordPerRound: number = 2;
@@ -19,6 +59,9 @@ let wordPerRound: number = 2;
 //          Implement Middleware that splits Zedeln and Personenraten
 //          Implement Personenraten
 
+
+
+/*
 bot.command('start', (ctx) => {
     let game = gameList.find(game => game.host.id == ctx.from.id)
     if(game) {
@@ -33,6 +76,7 @@ bot.command('start', (ctx) => {
         return true
     }
 });
+*/
 
 bot.command('help', (ctx) => {
     ctx.reply('Um ein Spiel zu starten \'/start\' eingeben,\nUm dem Spiel als Spieler beizutreten benutzt man \'/join{SpielID}\'\nNachdem jeder beigetreten ist und eine Nachricht vom Bot bekommen hat kann man das Spiel mit \'/start\' Starten, dann sammelt der Bot die Worte\nWenn die richtige Anzahl an Worten gesammelt wurde kann man mit \'/begin\' starten.\nNach jeder Runde muss man mit \'/begin\' das Spiel starten, jede Runde wird mit \'next\' beendet. Diese Befehle kann nur der Host, also die Person die das Spiel gestartet hat benutzen, falls das nicht gut geht, kann man das noch aendern. Falls Einstellungen gewuenscht werden, kann das auch noch getan werden, wie Viele Worte pro Runde, wie viele Spielrunden, scoring etc.');
@@ -43,6 +87,15 @@ bot.command('show', (ctx) => {
         console.log("Running Game " + game.id);
     }
 })
+
+bot.command('/setg', (ctx) => {
+    console.log('Info: ' + ctx.from + " tried to set G Time")
+    if(ctx.from.last_name == "Heller") {
+
+    }
+})
+
+
 
 //Join a game	    
 bot.hears(/^\/join(\d*)$/gi, (ctx) => {
@@ -104,6 +157,7 @@ bot.command('leave', (ctx) => {
     if (game) game.removePlayer(ctx.from)
 });
 
+bot.startPolling()
 bot.launch();
 
 class Game {
@@ -281,3 +335,4 @@ class ZedelPlayer extends Player {
         super(user)
     }
 }
+
