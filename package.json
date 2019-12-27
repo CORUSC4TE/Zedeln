@@ -15,6 +15,9 @@
     "type": "git",
     "url": "git+https://github.com/CORUSC4TE/Zedeln.git"
   },
+  "scripts": {
+		"start": "node server.js"
+  },
   "keywords": [
     "Zedeln",
     "Telegram",
