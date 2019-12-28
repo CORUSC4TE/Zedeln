@@ -10,6 +10,6 @@
     ],
     
     "files": [
-	"server.ts"
+	"source/server.ts"
     ]
 }

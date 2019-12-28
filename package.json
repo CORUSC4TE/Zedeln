@@ -8,15 +8,13 @@
   "main": "server.js",
   "dependencies": {
     "dotenv": "^8.2.0",
-    "telegraf": "^3.33.3"
+    "telegraf": "^3.33.3",
+    "telegraf-inline-menu": "^4.0.0"
   },
   "devDependencies": {},
   "repository": {
     "type": "git",
     "url": "git+https://github.com/CORUSC4TE/Zedeln.git"
-  },
-  "scripts": {
-		"start": "node server.js"
   },
   "keywords": [
     "Zedeln",

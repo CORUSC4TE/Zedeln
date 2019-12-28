@@ -1,7 +1,10 @@
 const Telegraf = require('telegraf');
+const TelegrafInlineMenu = require('telegraf-inline-menu');
 const dotenv = require('dotenv');
 dotenv.config();
 const bot = new Telegraf(process.env.BOT_TOKEN);
+const menu = new TelegrafInlineMenu('Wanna play a game?');
+let gameMenuToggle = false;
 let gameList = [];
 let wordPerRound = 2;
 bot.command('start', (ctx) => {
@@ -14,27 +17,30 @@ bot.command('start', (ctx) => {
     let game = new Game(ctx.from);
     gameList.push(game);
     game.playerList.push(new Player(ctx.from));
-    ctx.reply('Dein Spiel wurde gestartet mit der ID: ' + game.id + '\nUm das Spiel zu starten tippe \'/begin\',\nUm dem Spiel beizutreten schreibe im Gruppen chat oder Privat \'/join ' + game.id + '\'');
+    ctx.reply('Dein Spiel wurde gestartet mit der ID: ' + game.id +
+        '\nUm das Spiel zu starten tippe \'/begin\', ' +
+        '\nUm dem Spiel beizutreten schreibe mir \'/join' + game.id + '\'');
 });
 bot.command('help', (ctx) => {
-    ctx.reply('Um ein Spiel zu starten \'/start\' eingeben,\nUm dem Spiel als Spieler beizutreten benutzt man \'/join {SpielID}\'\nNachdem jeder beigetreten ist und eine Nachricht vom Bot bekommen hat kann man das Spiel mit \'/start\' Starten, dann sammelt der Bot die Worte\nWenn die richtige Anzahl an Worten gesammelt wurde kann man mit \'/begin\' starten.\nNach jeder Runde muss man mit \'/begin\' das Spiel starten, jede Runde wird mit \'next\' beendet. Diese Befehle kann nur der Host, also die Person die das Spiel gestartet hat benutzen, falls das nicht gut geht, kann man das noch aendern. Falls Einstellungen gewuenscht werden, kann das auch noch getan werden, wie Viele Worte pro Runde, wie viele Spielrunden, scoring etc.');
+    ctx.reply('Um ein Spiel zu starten \'/start\' eingeben,' +
+        '\nUm dem Spiel als Spieler beizutreten benutzt man \'/join-{SpielID}\'' +
+        '\nNachdem jeder beigetreten ist und eine Nachricht vom Bot bekommen hat kann man das Spiel mit \'/start\' Starten, ' +
+        'dann sammelt der Bot die Worte\nWenn die richtige Anzahl an Worten gesammelt wurde kann man mit \'/begin\' starten.' +
+        '\nNach jeder Runde muss man mit \'/begin\' das Spiel starten, jede Runde wird mit \'next\' beendet. ' +
+        'Diese Befehle kann nur der Host, also die Person die das Spiel gestartet hat benutzen. ' +
+        '\nFalls Einstellungen gewuenscht werden, kann das auch noch getan werden, wie Viele Worte pro Runde, wie viele Spielrunden, scoring etc.');
 });
-bot.command('join', (ctx) => {
-    let args = ctx.message.text.split(' ');
-    for (let game of gameList) {
-        if (game.id == args[1]) {
-            for (let player of game.playerList) {
-                if (player.id == ctx.from.id) {
-                    ctx.reply('Sie sind bereits Teil des Spiels.');
-                    return;
-                }
-            }
+bot.hears(/^\/join(\d*)$/gi, (ctx) => {
+    let game = gameList.find(game => game.id == parseInt(ctx.match[1]));
+    if (game) {
+        let player = game.playerList.find(player => player.id == ctx.from.id);
+        if (player) {
+            ctx.reply("Sie sind bereits Teil des Spiels.");
+        }
+        else {
             game.playerList.push(new Player(ctx.from));
-            bot.telegram.sendMessage(ctx.from.id, "Du bist Spiel " + game.id + " beigetreten.");
-            return;
         }
     }
-    ctx.reply("Spiel wurde nicht gefunden.");
 });
 bot.command('begin', (ctx) => {
     for (let game of gameList) {
